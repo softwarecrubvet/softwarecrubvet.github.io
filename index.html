@@ -123,6 +123,8 @@
       <form id="formCirugia" class="p-5 space-y-3">
         <input type="hidden" id="cirugiaId">
 
+        <!-- ===== SECCIÓN 1: FICHA MÉDICA ===== -->
+        <h4 class="text-sm font-bold text-slate-700 border-b pb-1">🩺 Ficha médica</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="text-xs font-semibold text-slate-500">Nombre del animal</label>
@@ -154,27 +156,39 @@
             <input id="hora" type="time" required class="w-full border rounded-lg px-3 py-2 text-sm">
           </div>
         </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">¿Por qué viene? (motivo de consulta)</label>
+          <textarea id="motivo" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="Describe el motivo de la consulta o cirugía…"></textarea>
+        </div>
 
-        <!-- Subir archivos por categoría (solo roles con permiso de edición) -->
-        <div class="requiere-edicion">
-          <label class="text-xs font-semibold text-slate-500">Adjuntar documentos por tipo</label>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+        <!-- ===== SECCIÓN 2: ARCHIVOS ===== -->
+        <div class="requiere-edicion space-y-2">
+          <h4 class="text-sm font-bold text-slate-700 border-b pb-1">📂 Archivos</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <span class="text-xs text-slate-500">🩻 Radiografías (RX)</span>
+              <span class="text-xs text-slate-500">🩸 Exámenes de sangre</span>
+              <input id="archivo_sangre" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
+            </div>
+            <div>
+              <span class="text-xs text-slate-500">🩻 Radiografías</span>
               <input id="archivo_rx" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
             </div>
             <div>
-              <span class="text-xs text-slate-500">💲 Presupuesto</span>
-              <input id="archivo_presupuesto" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
+              <span class="text-xs text-slate-500">🫧 Ecografías</span>
+              <input id="archivo_eco" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
             </div>
             <div>
-              <span class="text-xs text-slate-500">📋 Ficha clínica</span>
-              <input id="archivo_ficha" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
+              <span class="text-xs text-slate-500">❤️ Cardiólogo</span>
+              <input id="archivo_cardio" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
             </div>
-            <div>
-              <span class="text-xs text-slate-500">📎 Otros</span>
-              <input id="archivo_otros" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
-            </div>
+          </div>
+
+          <!-- ===== SECCIÓN 3: PRESUPUESTO ===== -->
+          <h4 class="text-sm font-bold text-slate-700 border-b pb-1 pt-2">💲 Presupuesto</h4>
+          <div>
+            <span class="text-xs text-slate-500">Adjuntar presupuesto</span>
+            <input id="archivo_presupuesto" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
           </div>
         </div>
 
@@ -261,10 +275,11 @@
 
     // Categorías de archivos: id del input -> etiqueta guardada
     const CATEGORIAS = [
-      { id: 'archivo_rx',          cat: 'RX' },
-      { id: 'archivo_presupuesto', cat: 'Presupuesto' },
-      { id: 'archivo_ficha',       cat: 'Ficha' },
-      { id: 'archivo_otros',       cat: 'Otros' }
+      { id: 'archivo_sangre',      cat: 'Exámenes de sangre' },
+      { id: 'archivo_rx',          cat: 'Radiografías' },
+      { id: 'archivo_eco',         cat: 'Ecografías' },
+      { id: 'archivo_cardio',      cat: 'Cardiólogo' },
+      { id: 'archivo_presupuesto', cat: 'Presupuesto' }
     ];
 
     // =======================================================
@@ -433,6 +448,7 @@
       document.getElementById('peso').value    = c.peso || '';
       document.getElementById('especie').value = c.especie || '';
       document.getElementById('raza').value    = c.raza || '';
+      document.getElementById('motivo').value  = c.motivo || '';
       document.getElementById('fecha').value   = c.fecha || '';
       document.getElementById('hora').value    = c.hora || '';
       document.getElementById('modalTitulo').textContent =
@@ -449,7 +465,7 @@
     }
 
     function bloquearCamposSiLectura(bloquear) {
-      ['animal','tutor','peso','especie','raza','fecha','hora'].forEach(id => {
+      ['animal','tutor','peso','especie','raza','motivo','fecha','hora'].forEach(id => {
         document.getElementById(id).disabled = bloquear;
       });
     }
@@ -553,6 +569,7 @@
         peso:    document.getElementById('peso').value,
         especie: document.getElementById('especie').value,
         raza:    document.getElementById('raza').value,
+        motivo:  document.getElementById('motivo').value,
         fecha:   document.getElementById('fecha').value,
         hora:    document.getElementById('hora').value,
         archivos: archivosB64
