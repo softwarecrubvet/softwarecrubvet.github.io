@@ -511,7 +511,7 @@
       btn.disabled = true; btn.textContent = '…';
       try {
         const res = await apiCall('agregarComentario', {
-          usuario: CRED.usuario, clave: CRED.clave, id: id, texto: texto
+          datos: { usuario: CRED.usuario, clave: CRED.clave, id: id, texto: texto }
         });
         ta.value = '';
         renderComentarios(res.comentarios);
