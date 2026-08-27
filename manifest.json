@@ -1,6 +1,6 @@
 {
-  "name": "Cirugías CrubVet",
-  "short_name": "CrubVet",
+  "name": "CX CRUBVET",
+  "short_name": "CX CRUBVET",
   "description": "Gestión de cirugías de la clínica veterinaria",
   "start_url": "./index.html",
   "display": "standalone",
