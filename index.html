@@ -377,6 +377,8 @@
     let CRED = null;             // { usuario, clave } -> se envía en cada llamada
     let cirugiaBloqueadaId = null; // ID de la cirugía que tengo reservada para editar
     let heartbeatTimer = null;     // renueva el bloqueo mientras edito
+    let inactivityTimer = null;    // cierra el formulario si no hay actividad
+    const INACTIVIDAD_MS = 2 * 60 * 1000; // 2 minutos
     let PUNTOS = [];               // localización anatómica: [{v:'ventral'|'dorsal', x, y}]
     let localizacionEditable = false;
     const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -447,6 +449,13 @@
       document.getElementById('btnLocLimpiar').onclick = function () {
         if (!localizacionEditable) return; PUNTOS = []; renderPuntos();
       };
+
+      // Actividad dentro del formulario reinicia el conteo de inactividad
+      ['input', 'keydown', 'click'].forEach(function (ev) {
+        document.getElementById('formCirugia').addEventListener(ev, function () {
+          if (cirugiaBloqueadaId) resetInactividad();
+        });
+      });
 
       // Si cierran la pestaña mientras editan, intentamos liberar el bloqueo
       window.addEventListener('beforeunload', function () {
@@ -717,10 +726,22 @@
         apiCall('intentarBloquear', {
           datos: { usuario: CRED.usuario, clave: CRED.clave, id: id }
         }).catch(function () {});
-      }, 45000); // renovar cada 45 s (el bloqueo dura 90 s)
+      }, 120000); // renovar cada 2 min (el bloqueo dura 5 min)
+      resetInactividad(); // arranca el conteo de inactividad
     }
     function detenerHeartbeat() {
       if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+      if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+    }
+    // Reinicia el temporizador de inactividad (se llama con cada acción del usuario)
+    function resetInactividad() {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(function () {
+        if (cirugiaBloqueadaId) {
+          cerrarModal(); // libera el bloqueo
+          alert('El formulario se cerró por inactividad (2 min) para liberar la cirugía.');
+        }
+      }, INACTIVIDAD_MS);
     }
     function liberarMiBloqueo() {
       detenerHeartbeat();
