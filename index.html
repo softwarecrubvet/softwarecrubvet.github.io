@@ -251,6 +251,11 @@
               </svg>
             </div>
           </div>
+          <div class="mt-2">
+            <label class="text-xs font-semibold text-slate-500">Comentario Localización anatómica</label>
+            <textarea id="comentarioLocalizacion" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"
+              placeholder="Describe la localización si es necesario…"></textarea>
+          </div>
         </div>
 
         <!-- ===== PRESUPUESTO (antes de Archivos) ===== -->
@@ -646,6 +651,7 @@
       document.getElementById('medicoSolicitante').value = c.medicoSolicitante || '';
       document.getElementById('prediagnostico').value    = c.prediagnostico || '';
       cargarLocalizacion(c.localizacion || '');
+      document.getElementById('comentarioLocalizacion').value = c.comentarioLocalizacion || '';
       document.getElementById('antecedentes').value      = c.antecedentes || '';
       document.getElementById('tratamiento').value       = c.tratamiento || '';
       document.getElementById('comentariosExamenes').value = c.comentariosExamenes || '';
@@ -736,7 +742,7 @@
       // Campos de Ficha médica (se ven siempre; se editan solo si P.ficha)
       ['nhc','animal','tutor','peso','especie','raza','fecha','hora',
        'sexo','esterilizado','procedimiento','medicoSolicitante','prediagnostico',
-       'antecedentes','tratamiento','alergiaTipo','alergiaCuales'].forEach(id => {
+       'antecedentes','tratamiento','alergiaTipo','alergiaCuales','comentarioLocalizacion'].forEach(id => {
         document.getElementById(id).disabled = !P.ficha;
       });
       setLocalizacionEditable(!!P.ficha); // diagrama de localización
@@ -945,6 +951,7 @@
         medicoSolicitante: document.getElementById('medicoSolicitante').value,
         prediagnostico:    document.getElementById('prediagnostico').value,
         localizacion:      leerLocalizacion(),
+        comentarioLocalizacion: document.getElementById('comentarioLocalizacion').value,
         antecedentes:      document.getElementById('antecedentes').value,
         tratamiento:       document.getElementById('tratamiento').value,
         alergias:          leerAlergias(),
