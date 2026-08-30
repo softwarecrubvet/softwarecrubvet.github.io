@@ -23,8 +23,6 @@
   <style>
     .cirugia-card { transition: transform .08s ease; }
     .cirugia-card:hover { transform: translateY(-2px); }
-    /* Ocultar controles de edición cuando el rol es solo lectura */
-    body.solo-lectura .requiere-edicion { display: none !important; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
@@ -73,7 +71,7 @@
           <p id="userRol" class="text-xs text-slate-500"></p>
         </div>
         <button id="btnAgregar"
-          class="requiere-edicion bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow whitespace-nowrap">
+          class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow whitespace-nowrap">
           <span class="sm:hidden text-lg leading-none">+</span>
           <span class="hidden sm:inline">+ Agregar Cirugía</span>
         </button>
@@ -152,7 +150,6 @@
             <label class="text-xs font-semibold text-slate-500">Raza</label>
             <input id="raza" class="w-full border rounded-lg px-3 py-2 text-sm">
           </div>
-          <div class="hidden sm:block"></div>
           <div>
             <label class="text-xs font-semibold text-slate-500">Fecha</label>
             <input id="fecha" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
@@ -161,15 +158,68 @@
             <label class="text-xs font-semibold text-slate-500">Hora</label>
             <input id="hora" type="time" required class="w-full border rounded-lg px-3 py-2 text-sm">
           </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">Sexo</label>
+            <select id="sexo" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="">—</option>
+              <option value="M">M</option>
+              <option value="H">H</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">Esterilizado</label>
+            <select id="esterilizado" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="">—</option>
+              <option value="Sí">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">Procedimiento solicitado</label>
+            <input id="procedimiento" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">Médico tratante</label>
+            <input id="medicoSolicitante" placeholder="Se completa con el doctor" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">Prediagnóstico</label>
+            <input id="prediagnostico" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">Localización anatómica</label>
+            <input id="localizacion" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
         </div>
         <div>
           <label class="text-xs font-semibold text-slate-500">¿Por qué viene? (motivo de consulta)</label>
           <textarea id="motivo" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"
             placeholder="Describe el motivo de la consulta o cirugía…"></textarea>
         </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">Antecedentes relevantes</label>
+          <textarea id="antecedentes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500">Tratamiento actual</label>
+          <textarea id="tratamiento" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-500">Alergias</label>
+            <select id="alergiaTipo" class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="No">No</option>
+              <option value="Sí">Sí</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500">¿Cuáles?</label>
+            <input id="alergiaCuales" placeholder="Indica cuáles" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
 
         <!-- ===== SECCIÓN 2: ARCHIVOS ===== -->
-        <div class="requiere-edicion space-y-2">
+        <div id="seccionArchivos" class="space-y-2">
           <h4 class="text-sm font-bold text-slate-700 border-b pb-1">📂 Archivos</h4>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
@@ -193,10 +243,35 @@
               <input id="archivo_otros" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
             </div>
           </div>
-
-          <!-- ===== SECCIÓN 3: PRESUPUESTO ===== -->
-          <h4 class="text-sm font-bold text-slate-700 border-b pb-1 pt-2">💲 Presupuesto</h4>
           <div>
+            <span class="text-xs text-slate-500">📝 Comentarios de exámenes</span>
+            <textarea id="comentariosExamenes" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"
+              placeholder="Observaciones sobre los exámenes…"></textarea>
+          </div>
+        </div>
+
+        <!-- ===== SOLICITUDES ESPECIALES ===== -->
+        <div id="seccionSolicitudes">
+          <h4 class="text-sm font-bold text-slate-700 border-b pb-1">📋 Solicitudes especiales</h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2 text-sm">
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Microchip"> Microchip</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Citología"> Citología</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Transfusión"> Transfusión</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Corte de uñas"> Corte de uñas</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Biopsia"> Biopsia</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Sonda/Tubo"> Sonda/Tubo</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Body"> Body</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Collar isabelino"> Collar isabelino</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="chk-solicitud" value="Cultivo"> Cultivo</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="se_otro" class="chk-solicitud" value="Otro"> Otro</label>
+          </div>
+          <input id="se_otro_texto" placeholder="Especifica 'Otro'…" class="w-full border rounded-lg px-3 py-2 text-sm mt-2">
+        </div>
+
+        <!-- ===== SECCIÓN 3: PRESUPUESTO ===== -->
+        <div id="seccionPresupuesto">
+          <h4 class="text-sm font-bold text-slate-700 border-b pb-1">💲 Presupuesto</h4>
+          <div class="mt-1">
             <span class="text-xs text-slate-500">Adjuntar presupuesto</span>
             <input id="archivo_presupuesto" type="file" multiple class="w-full text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
           </div>
@@ -209,21 +284,38 @@
         </div>
 
         <!-- Comentarios: cualquier rol puede leer y agregar -->
-        <div id="seccionComentarios" class="hidden border-t pt-3">
-          <label class="text-xs font-semibold text-slate-500">Comentarios</label>
-          <ul id="listaComentarios" class="space-y-1 my-2"></ul>
-          <div class="flex gap-2">
-            <textarea id="nuevoComentario" rows="2" placeholder="Escribe un comentario…"
-              class="flex-1 border rounded-lg px-3 py-2 text-sm"></textarea>
-            <button type="button" id="btnComentar"
-              class="px-3 py-2 rounded-lg text-sm bg-sky-600 hover:bg-sky-700 text-white font-semibold self-end whitespace-nowrap">Enviar</button>
+        <div id="seccionComentarios" class="hidden border-t pt-3 space-y-4">
+
+          <!-- Comentarios de ANESTESIA -->
+          <div>
+            <label class="text-sm font-bold text-slate-700">💉 Comentarios anestesia</label>
+            <ul id="listaComentarios_anestesia" class="space-y-1 my-2"></ul>
+            <div id="boxComentario_anestesia" class="flex gap-2">
+              <textarea id="nuevoComentario_anestesia" rows="2" placeholder="Escribe un comentario de anestesia…"
+                class="flex-1 border rounded-lg px-3 py-2 text-sm"></textarea>
+              <button type="button" data-tipo="anestesia"
+                class="btn-comentar px-3 py-2 rounded-lg text-sm bg-sky-600 hover:bg-sky-700 text-white font-semibold self-end whitespace-nowrap">Enviar</button>
+            </div>
           </div>
+
+          <!-- Comentarios de CIRUGÍA -->
+          <div>
+            <label class="text-sm font-bold text-slate-700">🔪 Comentarios cirugía</label>
+            <ul id="listaComentarios_cirugia" class="space-y-1 my-2"></ul>
+            <div id="boxComentario_cirugia" class="flex gap-2">
+              <textarea id="nuevoComentario_cirugia" rows="2" placeholder="Escribe un comentario de cirugía…"
+                class="flex-1 border rounded-lg px-3 py-2 text-sm"></textarea>
+              <button type="button" data-tipo="cirugia"
+                class="btn-comentar px-3 py-2 rounded-lg text-sm bg-sky-600 hover:bg-sky-700 text-white font-semibold self-end whitespace-nowrap">Enviar</button>
+            </div>
+          </div>
+
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" id="btnCancelar" class="px-4 py-2 rounded-lg text-sm bg-slate-200 hover:bg-slate-300">Cancelar</button>
           <button type="submit" id="btnGuardar"
-            class="requiere-edicion px-4 py-2 rounded-lg text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+            class="px-4 py-2 rounded-lg text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
             Guardar
           </button>
         </div>
@@ -241,7 +333,7 @@
     // === URL de tu Apps Script (Implementar -> Aplicación web -> /exec) ===
     const API_URL = 'https://script.google.com/macros/s/AKfycbxbVC0g56-uZL46ntitaMkgrPYKgD-A5FMqDQ2X6yUomqPCaQSUiydq8LFNX_KgJKQpjg/exec';
 
-    let USUARIO = null;          // { usuario, rol, nombre, puedeEditar }
+    let USUARIO = null;          // { usuario, rol, nombre, permisos }
     let CRED = null;             // { usuario, clave } -> se envía en cada llamada
 
     /**
@@ -280,7 +372,17 @@
       document.getElementById('btnCerrar').onclick   = cerrarModal;
       document.getElementById('btnCancelar').onclick = cerrarModal;
       document.getElementById('formCirugia').onsubmit = onSubmit;
-      document.getElementById('btnComentar').onclick = onComentar;
+      document.querySelectorAll('.btn-comentar').forEach(b => {
+        b.onclick = () => onComentar(b.getAttribute('data-tipo'));
+      });
+
+      // Al escribir el procedimiento, si es un DOCTOR, el "Médico tratante"
+      // se rellena automáticamente con su nombre.
+      document.getElementById('procedimiento').oninput = function () {
+        if (USUARIO && String(USUARIO.rol).toLowerCase() === 'doctor' && this.value.trim()) {
+          document.getElementById('medicoSolicitante').value = USUARIO.nombre;
+        }
+      };
     });
 
     // Categorías de archivos: id del input -> etiqueta guardada
@@ -335,8 +437,9 @@
       document.getElementById('userNombreM').textContent = USUARIO.nombre + ' · ';
       document.getElementById('userRolM').textContent = 'Rol: ' + USUARIO.rol;
 
-      // Control de roles: si NO puede editar, ocultamos botones de edición
-      document.body.classList.toggle('solo-lectura', !USUARIO.puedeEditar);
+      // El botón "Agregar Cirugía" solo para quien puede crear
+      const P = USUARIO.permisos || {};
+      document.getElementById('btnAgregar').style.display = P.crear ? '' : 'none';
       cargarCirugias();
     }
 
@@ -438,14 +541,15 @@
     //  MODAL: NUEVO
     // =======================================================
     function abrirModalNuevo() {
-      if (!USUARIO || !USUARIO.puedeEditar) return; // seguridad UI
+      const P = USUARIO.permisos || {};
+      if (!P.crear) return; // seguridad UI
       document.getElementById('formCirugia').reset();
       document.getElementById('cirugiaId').value = '';
       document.getElementById('modalTitulo').textContent = 'Agregar Cirugía';
       document.getElementById('archivosExistentes').classList.add('hidden');
       document.getElementById('seccionComentarios').classList.add('hidden'); // sin id todavía
       limpiarInputsArchivos();
-      bloquearCamposSiLectura(false);
+      aplicarPermisos(false); // esEdicion = false
       abrirModal();
     }
 
@@ -453,6 +557,7 @@
     //  MODAL: EDICIÓN (carga datos existentes)
     // =======================================================
     function abrirModalEdicion(c) {
+      const P = USUARIO.permisos || {};
       document.getElementById('cirugiaId').value = c.id;
       document.getElementById('nhc').value     = c.nhc || '';
       document.getElementById('animal').value  = c.animal || '';
@@ -463,27 +568,97 @@
       document.getElementById('motivo').value  = c.motivo || '';
       document.getElementById('fecha').value   = c.fecha || '';
       document.getElementById('hora').value    = c.hora || '';
+      document.getElementById('sexo').value              = c.sexo || '';
+      document.getElementById('esterilizado').value      = c.esterilizado || '';
+      document.getElementById('procedimiento').value     = c.procedimiento || '';
+      document.getElementById('medicoSolicitante').value = c.medicoSolicitante || '';
+      document.getElementById('prediagnostico').value    = c.prediagnostico || '';
+      document.getElementById('localizacion').value      = c.localizacion || '';
+      document.getElementById('antecedentes').value      = c.antecedentes || '';
+      document.getElementById('tratamiento').value       = c.tratamiento || '';
+      document.getElementById('comentariosExamenes').value = c.comentariosExamenes || '';
+      cargarAlergias(c.alergias || 'No');
+      cargarSolicitudes(c.solicitudes || '');
       document.getElementById('modalTitulo').textContent =
-        USUARIO.puedeEditar ? 'Editar Cirugía' : 'Detalle de Cirugía';
+        (P.ficha || P.archivos || P.solicitudes || P.presupuesto) ? 'Editar Cirugía' : 'Detalle de Cirugía';
 
       limpiarInputsArchivos();
       renderArchivos(c.archivos);        // archivos ya adjuntos, agrupados por categoría
-      renderComentarios(c.comentarios);  // comentarios existentes
+      renderComentarios(c.comentariosAnestesia, 'anestesia');
+      renderComentarios(c.comentariosCirugia, 'cirugia');
       document.getElementById('seccionComentarios').classList.remove('hidden');
 
-      // Roles de solo lectura: deshabilitar los campos de texto
-      bloquearCamposSiLectura(!USUARIO.puedeEditar);
+      aplicarPermisos(true); // esEdicion = true
       abrirModal();
     }
 
-    function bloquearCamposSiLectura(bloquear) {
-      ['nhc','animal','tutor','peso','especie','raza','motivo','fecha','hora'].forEach(id => {
-        document.getElementById(id).disabled = bloquear;
+    /**
+     * Muestra/oculta y habilita/deshabilita cada parte del formulario
+     * según los permisos del rol actual.
+     */
+    function aplicarPermisos(esEdicion) {
+      const P = USUARIO.permisos || {};
+      // Campos de Ficha médica (se ven siempre; se editan solo si P.ficha)
+      ['nhc','animal','tutor','peso','especie','raza','motivo','fecha','hora',
+       'sexo','esterilizado','procedimiento','medicoSolicitante','prediagnostico',
+       'localizacion','antecedentes','tratamiento','alergiaTipo','alergiaCuales'].forEach(id => {
+        document.getElementById(id).disabled = !P.ficha;
       });
+      // Solicitudes especiales (se ven siempre; se editan solo si P.solicitudes)
+      document.querySelectorAll('.chk-solicitud').forEach(c => { c.disabled = !P.solicitudes; });
+      document.getElementById('se_otro_texto').disabled = !P.solicitudes;
+      // Secciones de subida de archivos
+      document.getElementById('seccionArchivos').style.display    = P.archivos ? '' : 'none';
+      document.getElementById('seccionPresupuesto').style.display = P.presupuesto ? '' : 'none';
+      // Botón Guardar: solo si puede modificar ficha, archivos, solicitudes o presupuesto
+      const puedeGuardar = P.ficha || P.archivos || P.solicitudes || P.presupuesto;
+      document.getElementById('btnGuardar').style.display = puedeGuardar ? '' : 'none';
+      // Cajas para escribir comentarios (solo en edición y según su permiso)
+      document.getElementById('boxComentario_anestesia').style.display = (esEdicion && P.comentariosAnestesia) ? '' : 'none';
+      document.getElementById('boxComentario_cirugia').style.display   = (esEdicion && P.comentariosCirugia) ? '' : 'none';
     }
 
     function limpiarInputsArchivos() {
       CATEGORIAS.forEach(c => { const i = document.getElementById(c.id); if (i) i.value = ''; });
+    }
+
+    // ---- Alergias: combinar/parsear entre el select y el texto ----
+    function leerAlergias() {
+      const tipo = document.getElementById('alergiaTipo').value;
+      if (tipo !== 'Sí') return 'No';
+      const cuales = document.getElementById('alergiaCuales').value.trim();
+      return cuales || 'Sí';
+    }
+    function cargarAlergias(valor) {
+      const v = String(valor || 'No').trim();
+      if (!v || v.toLowerCase() === 'no') {
+        document.getElementById('alergiaTipo').value = 'No';
+        document.getElementById('alergiaCuales').value = '';
+      } else {
+        document.getElementById('alergiaTipo').value = 'Sí';
+        document.getElementById('alergiaCuales').value = (v === 'Sí') ? '' : v;
+      }
+    }
+
+    // ---- Solicitudes especiales: checkboxes <-> texto "a, b, Otro: x" ----
+    function recolectarSolicitudes() {
+      const arr = [];
+      document.querySelectorAll('.chk-solicitud:checked').forEach(c => arr.push(c.value));
+      const otroChk = document.getElementById('se_otro').checked;
+      const otroTxt = document.getElementById('se_otro_texto').value.trim();
+      if (otroChk && otroTxt) {
+        const i = arr.indexOf('Otro');
+        if (i >= 0) arr[i] = 'Otro: ' + otroTxt; else arr.push('Otro: ' + otroTxt);
+      }
+      return arr.join(', ');
+    }
+    function cargarSolicitudes(str) {
+      const partes = String(str || '').split(',').map(s => s.trim()).filter(Boolean);
+      document.querySelectorAll('.chk-solicitud').forEach(c => {
+        c.checked = partes.some(p => p === c.value || (c.value === 'Otro' && p.startsWith('Otro')));
+      });
+      const otroP = partes.find(p => p.toLowerCase().startsWith('otro:'));
+      document.getElementById('se_otro_texto').value = otroP ? otroP.replace(/^otro:\s*/i, '') : '';
     }
 
     /** Muestra los archivos adjuntos agrupados por categoría (todos los roles pueden abrirlos). */
@@ -511,9 +686,9 @@
       wrap.classList.remove('hidden');
     }
 
-    /** Muestra la lista de comentarios. */
-    function renderComentarios(comentarios) {
-      const ul = document.getElementById('listaComentarios');
+    /** Muestra la lista de comentarios de un tipo ('anestesia' o 'cirugia'). */
+    function renderComentarios(comentarios, tipo) {
+      const ul = document.getElementById('listaComentarios_' + tipo);
       ul.innerHTML = '';
       if (!comentarios || !comentarios.length) {
         ul.innerHTML = '<li class="text-xs text-slate-400">Sin comentarios aún.</li>';
@@ -528,23 +703,26 @@
       });
     }
 
-    /** Envía un comentario nuevo (disponible para cualquier rol). */
-    async function onComentar() {
+    /** Envía un comentario nuevo del tipo indicado (disponible para cualquier rol). */
+    async function onComentar(tipo) {
       const id = document.getElementById('cirugiaId').value;
-      const ta = document.getElementById('nuevoComentario');
+      const ta = document.getElementById('nuevoComentario_' + tipo);
       const texto = ta.value.trim();
       if (!id || !texto) return;
 
-      const btn = document.getElementById('btnComentar');
+      const btn = document.querySelector('.btn-comentar[data-tipo="' + tipo + '"]');
       btn.disabled = true; btn.textContent = '…';
       try {
         const res = await apiCall('agregarComentario', {
-          datos: { usuario: CRED.usuario, clave: CRED.clave, id: id, texto: texto }
+          datos: { usuario: CRED.usuario, clave: CRED.clave, id: id, texto: texto, tipo: tipo }
         });
         ta.value = '';
-        renderComentarios(res.comentarios);
+        renderComentarios(res.comentarios, tipo);
         const cir = CIRUGIAS.find(x => x.id === id);   // actualiza la caché local
-        if (cir) cir.comentarios = res.comentarios;
+        if (cir) {
+          if (tipo === 'cirugia') cir.comentariosCirugia = res.comentarios;
+          else cir.comentariosAnestesia = res.comentarios;
+        }
       } catch (e) {
         onError(e);
       } finally {
@@ -563,7 +741,8 @@
     // =======================================================
     async function onSubmit(e) {
       e.preventDefault();
-      if (!USUARIO.puedeEditar) return; // doble control
+      const P = USUARIO.permisos || {};
+      if (!(P.ficha || P.archivos || P.solicitudes || P.presupuesto)) return; // doble control
 
       const btn = document.getElementById('btnGuardar');
       btn.disabled = true;
@@ -585,6 +764,17 @@
         motivo:  document.getElementById('motivo').value,
         fecha:   document.getElementById('fecha').value,
         hora:    document.getElementById('hora').value,
+        sexo:              document.getElementById('sexo').value,
+        esterilizado:      document.getElementById('esterilizado').value,
+        procedimiento:     document.getElementById('procedimiento').value,
+        medicoSolicitante: document.getElementById('medicoSolicitante').value,
+        prediagnostico:    document.getElementById('prediagnostico').value,
+        localizacion:      document.getElementById('localizacion').value,
+        antecedentes:      document.getElementById('antecedentes').value,
+        tratamiento:       document.getElementById('tratamiento').value,
+        alergias:          leerAlergias(),
+        solicitudes:       recolectarSolicitudes(),
+        comentariosExamenes: document.getElementById('comentariosExamenes').value,
         archivos: archivosB64
       };
 
