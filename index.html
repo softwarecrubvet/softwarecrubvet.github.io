@@ -127,6 +127,12 @@
         <h4 class="text-sm font-bold text-slate-700 border-b pb-1">🩺 Ficha médica</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
+            <label class="text-xs font-semibold text-slate-500">NHC</label>
+            <input id="nhc" type="text" inputmode="numeric" pattern="[0-9]*"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+              placeholder="Solo números" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
             <label class="text-xs font-semibold text-slate-500">Nombre del animal</label>
             <input id="animal" required class="w-full border rounded-lg px-3 py-2 text-sm">
           </div>
@@ -448,6 +454,7 @@
     // =======================================================
     function abrirModalEdicion(c) {
       document.getElementById('cirugiaId').value = c.id;
+      document.getElementById('nhc').value     = c.nhc || '';
       document.getElementById('animal').value  = c.animal || '';
       document.getElementById('tutor').value   = c.tutor || '';
       document.getElementById('peso').value    = c.peso || '';
@@ -470,7 +477,7 @@
     }
 
     function bloquearCamposSiLectura(bloquear) {
-      ['animal','tutor','peso','especie','raza','motivo','fecha','hora'].forEach(id => {
+      ['nhc','animal','tutor','peso','especie','raza','motivo','fecha','hora'].forEach(id => {
         document.getElementById(id).disabled = bloquear;
       });
     }
@@ -569,6 +576,7 @@
         usuario: CRED.usuario,   // credenciales para validar en el servidor
         clave:   CRED.clave,
         id:      document.getElementById('cirugiaId').value,
+        nhc:     document.getElementById('nhc').value,
         animal:  document.getElementById('animal').value,
         tutor:   document.getElementById('tutor').value,
         peso:    document.getElementById('peso').value,
