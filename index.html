@@ -198,10 +198,6 @@
             <label class="text-xs font-semibold text-slate-500">Prediagnóstico</label>
             <input id="prediagnostico" class="w-full border rounded-lg px-3 py-2 text-sm">
           </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-500">Localización anatómica</label>
-            <input id="localizacion" class="w-full border rounded-lg px-3 py-2 text-sm">
-          </div>
         </div>
         <div>
           <label class="text-xs font-semibold text-slate-500">Antecedentes relevantes</label>
@@ -222,6 +218,38 @@
           <div>
             <label class="text-xs font-semibold text-slate-500">¿Cuáles?</label>
             <input id="alergiaCuales" placeholder="Indica cuáles" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+
+        <!-- ===== LOCALIZACIÓN ANATÓMICA (interactivo) ===== -->
+        <div id="localizacionWidget">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-500">Localización anatómica</label>
+            <div id="locControles" class="flex gap-2">
+              <button type="button" id="btnLocDeshacer" class="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300">Deshacer</button>
+              <button type="button" id="btnLocLimpiar" class="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300">Limpiar</button>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 mb-1">Haz clic sobre el dibujo para marcar; clic en un punto para quitarlo.</p>
+          <div class="flex flex-wrap gap-2">
+            <div class="flex-1 min-w-[130px] border rounded-lg p-1 bg-white">
+              <svg id="svgLoc_ventral" viewBox="0 0 200 292" class="w-full h-auto select-none" style="touch-action:none">
+                <image href="silueta.jpeg" x="0" y="0" width="200" height="275" preserveAspectRatio="xMidYMid meet"/>
+                <g id="gLoc_ventral"></g>
+                <text x="6" y="135" text-anchor="start" font-size="16" font-weight="bold" fill="#475569">D</text>
+                <text x="194" y="135" text-anchor="end" font-size="16" font-weight="bold" fill="#475569">I</text>
+                <text x="100" y="289" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569">Ventral</text>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-[130px] border rounded-lg p-1 bg-white">
+              <svg id="svgLoc_dorsal" viewBox="0 0 200 292" class="w-full h-auto select-none" style="touch-action:none">
+                <image href="silueta.jpeg" x="0" y="0" width="200" height="275" preserveAspectRatio="xMidYMid meet"/>
+                <g id="gLoc_dorsal"></g>
+                <text x="6" y="135" text-anchor="start" font-size="16" font-weight="bold" fill="#475569">I</text>
+                <text x="194" y="135" text-anchor="end" font-size="16" font-weight="bold" fill="#475569">D</text>
+                <text x="100" y="289" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569">Dorsal</text>
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -344,6 +372,9 @@
     let CRED = null;             // { usuario, clave } -> se envía en cada llamada
     let cirugiaBloqueadaId = null; // ID de la cirugía que tengo reservada para editar
     let heartbeatTimer = null;     // renueva el bloqueo mientras edito
+    let PUNTOS = [];               // localización anatómica: [{v:'ventral'|'dorsal', x, y}]
+    let localizacionEditable = false;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
 
     /**
      * Llama a la API de Apps Script por HTTP.
@@ -391,6 +422,25 @@
         if (USUARIO && String(USUARIO.rol).toLowerCase() === 'doctor' && this.value.trim()) {
           document.getElementById('medicoSolicitante').value = USUARIO.nombre;
         }
+      };
+
+      // Localización anatómica: clic en cada silueta agrega un punto
+      ['ventral', 'dorsal'].forEach(function (v) {
+        const svg = document.getElementById('svgLoc_' + v);
+        svg.addEventListener('click', function (e) {
+          if (!localizacionEditable) return;
+          const pt = svg.createSVGPoint();
+          pt.x = e.clientX; pt.y = e.clientY;
+          const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+          PUNTOS.push({ v: v, x: Math.round(loc.x), y: Math.round(loc.y) });
+          renderPuntos();
+        });
+      });
+      document.getElementById('btnLocDeshacer').onclick = function () {
+        if (!localizacionEditable) return; PUNTOS.pop(); renderPuntos();
+      };
+      document.getElementById('btnLocLimpiar').onclick = function () {
+        if (!localizacionEditable) return; PUNTOS = []; renderPuntos();
       };
 
       // Si cierran la pestaña mientras editan, intentamos liberar el bloqueo
@@ -571,6 +621,7 @@
       document.getElementById('archivosExistentes').classList.add('hidden');
       document.getElementById('seccionComentarios').classList.add('hidden'); // sin id todavía
       limpiarInputsArchivos();
+      cargarLocalizacion(''); // sin puntos
       aplicarPermisos(false); // esEdicion = false
       abrirModal();
     }
@@ -594,7 +645,7 @@
       document.getElementById('procedimiento').value     = c.procedimiento || '';
       document.getElementById('medicoSolicitante').value = c.medicoSolicitante || '';
       document.getElementById('prediagnostico').value    = c.prediagnostico || '';
-      document.getElementById('localizacion').value      = c.localizacion || '';
+      cargarLocalizacion(c.localizacion || '');
       document.getElementById('antecedentes').value      = c.antecedentes || '';
       document.getElementById('tratamiento').value       = c.tratamiento || '';
       document.getElementById('comentariosExamenes').value = c.comentariosExamenes || '';
@@ -651,6 +702,7 @@
         if (el.id && el.id.indexOf('nuevoComentario_') === 0) return; // comentarios siguen activos
         el.disabled = true;
       });
+      setLocalizacionEditable(false); // no dejar marcar puntos si está bloqueada
       document.getElementById('btnGuardar').style.display = 'none';
     }
     function iniciarHeartbeat(id) {
@@ -684,9 +736,10 @@
       // Campos de Ficha médica (se ven siempre; se editan solo si P.ficha)
       ['nhc','animal','tutor','peso','especie','raza','fecha','hora',
        'sexo','esterilizado','procedimiento','medicoSolicitante','prediagnostico',
-       'localizacion','antecedentes','tratamiento','alergiaTipo','alergiaCuales'].forEach(id => {
+       'antecedentes','tratamiento','alergiaTipo','alergiaCuales'].forEach(id => {
         document.getElementById(id).disabled = !P.ficha;
       });
+      setLocalizacionEditable(!!P.ficha); // diagrama de localización
       // Solicitudes especiales (se ven siempre; se editan solo si P.solicitudes)
       document.querySelectorAll('.chk-solicitud').forEach(c => { c.disabled = !P.solicitudes; });
       document.getElementById('se_otro_texto').disabled = !P.solicitudes;
@@ -721,6 +774,45 @@
         document.getElementById('alergiaTipo').value = 'Sí';
         document.getElementById('alergiaCuales').value = (v === 'Sí') ? '' : v;
       }
+    }
+
+    // ---- Localización anatómica: puntos sobre las siluetas ----
+    function renderPuntos() {
+      ['ventral', 'dorsal'].forEach(function (v) {
+        document.getElementById('gLoc_' + v).innerHTML = '';
+      });
+      PUNTOS.forEach(function (p, i) {
+        const g = document.getElementById('gLoc_' + p.v);
+        if (!g) return;
+        const c = document.createElementNS(SVG_NS, 'circle');
+        c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 6);
+        c.setAttribute('fill', '#dc2626'); c.setAttribute('stroke', '#fff'); c.setAttribute('stroke-width', '1.5');
+        c.style.cursor = localizacionEditable ? 'pointer' : 'default';
+        c.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          if (!localizacionEditable) return;
+          PUNTOS.splice(i, 1); renderPuntos();
+        });
+        const t = document.createElementNS(SVG_NS, 'text');
+        t.setAttribute('x', Number(p.x) + 8); t.setAttribute('y', Number(p.y) + 4);
+        t.setAttribute('font-size', '12'); t.setAttribute('font-weight', 'bold'); t.setAttribute('fill', '#dc2626');
+        t.textContent = (i + 1);
+        g.appendChild(c); g.appendChild(t);
+      });
+    }
+    function cargarLocalizacion(str) {
+      PUNTOS = [];
+      if (str) { try { const a = JSON.parse(str); if (Array.isArray(a)) PUNTOS = a; } catch (e) {} }
+      renderPuntos();
+    }
+    function leerLocalizacion() { return JSON.stringify(PUNTOS); }
+    function setLocalizacionEditable(b) {
+      localizacionEditable = b;
+      document.querySelectorAll('#localizacionWidget svg').forEach(function (s) {
+        s.style.cursor = b ? 'crosshair' : 'default';
+      });
+      document.getElementById('locControles').style.display = b ? '' : 'none';
+      renderPuntos();
     }
 
     // ---- Solicitudes especiales: checkboxes <-> texto "a, b, Otro: x" ----
@@ -852,7 +944,7 @@
         procedimiento:     document.getElementById('procedimiento').value,
         medicoSolicitante: document.getElementById('medicoSolicitante').value,
         prediagnostico:    document.getElementById('prediagnostico').value,
-        localizacion:      document.getElementById('localizacion').value,
+        localizacion:      leerLocalizacion(),
         antecedentes:      document.getElementById('antecedentes').value,
         tratamiento:       document.getElementById('tratamiento').value,
         alergias:          leerAlergias(),
