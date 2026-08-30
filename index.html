@@ -117,6 +117,9 @@
         <h3 id="modalTitulo" class="font-bold text-slate-700">Agregar Cirugía</h3>
         <button id="btnCerrar" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
       </div>
+      <div id="bannerBloqueo" class="hidden bg-amber-100 text-amber-800 text-sm px-5 py-2 border-b">
+        🔒 <span id="bannerBloqueoTexto"></span>
+      </div>
 
       <form id="formCirugia" class="p-5 space-y-3">
         <input type="hidden" id="cirugiaId">
@@ -339,6 +342,8 @@
 
     let USUARIO = null;          // { usuario, rol, nombre, permisos }
     let CRED = null;             // { usuario, clave } -> se envía en cada llamada
+    let cirugiaBloqueadaId = null; // ID de la cirugía que tengo reservada para editar
+    let heartbeatTimer = null;     // renueva el bloqueo mientras edito
 
     /**
      * Llama a la API de Apps Script por HTTP.
@@ -387,6 +392,18 @@
           document.getElementById('medicoSolicitante').value = USUARIO.nombre;
         }
       };
+
+      // Si cierran la pestaña mientras editan, intentamos liberar el bloqueo
+      window.addEventListener('beforeunload', function () {
+        if (cirugiaBloqueadaId && CRED) {
+          try {
+            navigator.sendBeacon(API_URL, JSON.stringify({
+              action: 'liberarBloqueo',
+              datos: { usuario: CRED.usuario, clave: CRED.clave, id: cirugiaBloqueadaId }
+            }));
+          } catch (e) {}
+        }
+      });
     });
 
     // Categorías de archivos: id del input -> etiqueta guardada
@@ -448,6 +465,7 @@
     }
 
     function cerrarSesion() {
+      liberarMiBloqueo();
       CRED = null; USUARIO = null; CIRUGIAS = [];
       document.getElementById('formLogin').reset();
       document.getElementById('app').classList.add('hidden');
@@ -560,7 +578,7 @@
     // =======================================================
     //  MODAL: EDICIÓN (carga datos existentes)
     // =======================================================
-    function abrirModalEdicion(c) {
+    async function abrirModalEdicion(c) {
       const P = USUARIO.permisos || {};
       document.getElementById('cirugiaId').value = c.id;
       document.getElementById('nhc').value     = c.nhc || '';
@@ -592,7 +610,69 @@
       document.getElementById('seccionComentarios').classList.remove('hidden');
 
       aplicarPermisos(true); // esEdicion = true
+      ocultarBannerBloqueo();
       abrirModal();
+
+      // Bloqueo de edición: solo para quien puede editar el registro
+      const esEditor = P.ficha || P.archivos || P.solicitudes || P.presupuesto;
+      if (esEditor) {
+        try {
+          const r = await apiCall('intentarBloquear', {
+            datos: { usuario: CRED.usuario, clave: CRED.clave, id: c.id }
+          });
+          if (r.bloqueado) {
+            // Otra persona está editando -> forzamos solo lectura
+            mostrarBannerBloqueo(r.por);
+            forzarSoloLectura();
+          } else {
+            // La reservamos: empezamos a renovarla periódicamente
+            cirugiaBloqueadaId = c.id;
+            iniciarHeartbeat(c.id);
+          }
+        } catch (e) {
+          // Si el chequeo falla, avisamos pero no rompemos la app
+          console.warn('No se pudo verificar el bloqueo:', e);
+        }
+      }
+    }
+
+    // ---- Bloqueo de edición ----
+    function mostrarBannerBloqueo(nombre) {
+      document.getElementById('bannerBloqueoTexto').textContent =
+        'Esta cirugía la está editando ' + (nombre || 'otra persona') + '. Solo puedes verla.';
+      document.getElementById('bannerBloqueo').classList.remove('hidden');
+    }
+    function ocultarBannerBloqueo() {
+      document.getElementById('bannerBloqueo').classList.add('hidden');
+    }
+    /** Deja todo el formulario en solo lectura (excepto escribir comentarios, que no genera conflicto). */
+    function forzarSoloLectura() {
+      document.querySelectorAll('#formCirugia input, #formCirugia select, #formCirugia textarea').forEach(el => {
+        if (el.id && el.id.indexOf('nuevoComentario_') === 0) return; // comentarios siguen activos
+        el.disabled = true;
+      });
+      document.getElementById('btnGuardar').style.display = 'none';
+    }
+    function iniciarHeartbeat(id) {
+      detenerHeartbeat();
+      heartbeatTimer = setInterval(function () {
+        apiCall('intentarBloquear', {
+          datos: { usuario: CRED.usuario, clave: CRED.clave, id: id }
+        }).catch(function () {});
+      }, 45000); // renovar cada 45 s (el bloqueo dura 90 s)
+    }
+    function detenerHeartbeat() {
+      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+    }
+    function liberarMiBloqueo() {
+      detenerHeartbeat();
+      if (cirugiaBloqueadaId) {
+        const id = cirugiaBloqueadaId;
+        cirugiaBloqueadaId = null;
+        apiCall('liberarBloqueo', {
+          datos: { usuario: CRED.usuario, clave: CRED.clave, id: id }
+        }).catch(function () {});
+      }
     }
 
     /**
@@ -737,6 +817,7 @@
     function cerrarModal() {
       document.getElementById('modal').classList.add('hidden');
       document.getElementById('msgGuardando').classList.add('hidden');
+      liberarMiBloqueo(); // suelto la reserva para que otros puedan editar
     }
 
     // =======================================================
