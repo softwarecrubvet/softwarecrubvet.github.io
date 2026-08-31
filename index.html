@@ -317,6 +317,16 @@
           <input id="se_otro_texto" placeholder="Especifica 'Otro'…" class="w-full border rounded-lg px-3 py-2 text-sm mt-2">
         </div>
 
+        <!-- Ficha anestésica: subida independiente (anestesista y editores) -->
+        <div id="seccionFichaAnestesica" class="hidden">
+          <h4 class="text-sm font-bold text-slate-700 border-b pb-1">🧷 Ficha anestésica</h4>
+          <div class="flex gap-2 mt-1">
+            <input id="archivo_ficha_anestesica" type="file" multiple class="flex-1 text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
+            <button type="button" id="btnSubirFichaAnest"
+              class="px-3 py-2 rounded-lg text-sm bg-sky-600 hover:bg-sky-700 text-white font-semibold whitespace-nowrap">Subir</button>
+          </div>
+        </div>
+
         <!-- Archivos ya adjuntos (en edición), agrupados por categoría -->
         <div id="archivosExistentes" class="hidden">
           <label class="text-xs font-semibold text-slate-500">Archivos adjuntos</label>
@@ -422,6 +432,7 @@
       document.querySelectorAll('.btn-comentar').forEach(b => {
         b.onclick = () => onComentar(b.getAttribute('data-tipo'));
       });
+      document.getElementById('btnSubirFichaAnest').onclick = onSubirFichaAnestesica;
 
       // Al escribir el procedimiento, si es un DOCTOR, el "Médico tratante"
       // se rellena automáticamente con su nombre.
@@ -779,10 +790,15 @@
       // Cajas para escribir comentarios (solo en edición y según su permiso)
       document.getElementById('boxComentario_anestesia').style.display = (esEdicion && P.comentariosAnestesia) ? '' : 'none';
       document.getElementById('boxComentario_cirugia').style.display   = (esEdicion && P.comentariosCirugia) ? '' : 'none';
+      // Ficha anestésica: subir archivo (solo en edición, con permiso propio o de archivos)
+      const puedeFichaAnest = P.fichaAnestesica || P.archivos;
+      document.getElementById('seccionFichaAnestesica').style.display = (esEdicion && puedeFichaAnest) ? 'block' : 'none';
+      document.getElementById('archivo_ficha_anestesica').disabled = !puedeFichaAnest;
     }
 
     function limpiarInputsArchivos() {
       CATEGORIAS.forEach(c => { const i = document.getElementById(c.id); if (i) i.value = ''; });
+      const fa = document.getElementById('archivo_ficha_anestesica'); if (fa) fa.value = '';
     }
 
     // ---- Alergias: combinar/parsear entre el select y el texto ----
@@ -903,6 +919,37 @@
           <div class="text-xs text-slate-400 mt-0.5">${escapar(c.autor || '')} · ${escapar(c.fecha || '')}</div>`;
         ul.appendChild(li);
       });
+    }
+
+    /** Sube la ficha anestésica (agrega archivo sin sobrescribir el resto). */
+    async function onSubirFichaAnestesica() {
+      const id = document.getElementById('cirugiaId').value;
+      const input = document.getElementById('archivo_ficha_anestesica');
+      if (!id || !input.files.length) return;
+
+      const btn = document.getElementById('btnSubirFichaAnest');
+      btn.disabled = true; btn.textContent = 'Subiendo…';
+      try {
+        const files = await Promise.all(Array.from(input.files).map(f => new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res({
+            nombre: f.name, mimeType: f.type || 'application/octet-stream',
+            base64: String(r.result).split(',')[1], categoria: 'Ficha anestésica'
+          });
+          r.onerror = rej; r.readAsDataURL(f);
+        })));
+        const res = await apiCall('subirFichaAnestesica', {
+          datos: { usuario: CRED.usuario, clave: CRED.clave, id: id, archivos: files }
+        });
+        input.value = '';
+        renderArchivos(res.archivos);
+        const cir = CIRUGIAS.find(x => x.id === id);
+        if (cir) cir.archivos = res.archivos;
+      } catch (e) {
+        onError(e);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Subir';
+      }
     }
 
     /** Envía un comentario nuevo del tipo indicado (disponible para cualquier rol). */
