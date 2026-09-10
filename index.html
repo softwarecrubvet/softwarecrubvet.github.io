@@ -563,7 +563,12 @@
         const res = await fetch(API_URL + '?' + params.toString());
         const json = await res.json();
         if (!json.ok) throw new Error(json.error || 'Error del servidor');
-        CIRUGIAS = json.data || [];
+        // Normalizamos fecha (YYYY-MM-DD) y hora (HH:mm) sin importar el formato que llegue
+        CIRUGIAS = (json.data || []).map(c => {
+          c.fecha = normFecha(c.fecha);
+          c.hora  = normHora(c.hora);
+          return c;
+        });
         cargando.style.display = 'none';
         render();
       } catch (e) {
@@ -593,6 +598,27 @@
       const m = String(d.getMonth()+1).padStart(2,'0');
       const dd = String(d.getDate()).padStart(2,'0');
       return `${y}-${m}-${dd}`;
+    }
+
+    /** Devuelve una fecha en formato "YYYY-MM-DD" venga como venga del servidor. */
+    function normFecha(f) {
+      if (!f) return '';
+      if (/^\d{4}-\d{2}-\d{2}$/.test(f)) return f;           // ya está bien
+      const d = new Date(f);
+      if (!isNaN(d.getTime())) return fechaISO(d);           // Date, ISO o texto largo
+      return String(f).slice(0, 10);
+    }
+
+    /** Devuelve una hora en formato "HH:mm" venga como venga del servidor. */
+    function normHora(h) {
+      if (!h) return '';
+      const m = String(h).match(/(\d{1,2}):(\d{2})/);
+      if (m) return m[1].padStart(2, '0') + ':' + m[2];      // "9:00" o "09:00" o dentro de texto largo
+      const d = new Date(h);
+      if (!isNaN(d.getTime())) {
+        return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      }
+      return String(h);
     }
 
     function render() {
