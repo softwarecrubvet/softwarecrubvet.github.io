@@ -556,8 +556,14 @@
       cargando.style.display = '';
       cargando.textContent = 'Cargando cirugías…';
       try {
-        const lista = await apiCall('getCirugias', { cred: CRED });
-        CIRUGIAS = lista || [];
+        // Leemos por GET (más estable que POST en Apps Script)
+        const params = new URLSearchParams({
+          action: 'getCirugias', usuario: CRED.usuario, clave: CRED.clave
+        });
+        const res = await fetch(API_URL + '?' + params.toString());
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.error || 'Error del servidor');
+        CIRUGIAS = json.data || [];
         cargando.style.display = 'none';
         render();
       } catch (e) {
