@@ -672,13 +672,28 @@
       }
     }
 
+    /** Devuelve el peso como número limpio, o '' si el dato no es un número. */
+    function normPeso(p) {
+      if (p === null || p === undefined) return '';
+      const s = String(p).trim();
+      if (!s) return '';
+      // Descarta valores raros tipo fecha/hora
+      if (/\d{4}-\d{2}-\d{2}|T\d{2}:\d{2}|GMT/.test(s)) return '';
+      const n = parseFloat(s.replace(',', '.'));
+      return isNaN(n) ? '' : String(n);
+    }
+
     function tarjetaCirugia(c) {
       const div = document.createElement('div');
-      div.className = 'cirugia-card cursor-pointer bg-sky-50 border border-sky-200 rounded-md p-1.5 text-xs';
+      div.className = 'cirugia-card cursor-pointer bg-sky-50 border border-sky-200 rounded-md p-1.5 text-xs space-y-0.5';
+      const peso = normPeso(c.peso);
+      const especieRaza = [c.especie, c.raza].filter(Boolean).join(', ');
       div.innerHTML = `
-        <div class="font-bold text-sky-800">${escapar(c.hora || '')} · ${escapar(c.animal || '')}</div>
-        <div class="text-slate-500">${escapar(c.especie || '')} ${c.peso ? '· '+escapar(c.peso)+'kg' : ''}</div>
-        ${c.archivos && c.archivos.length ? `<div class="text-slate-400">📎 ${c.archivos.length}</div>` : ''}`;
+        <div class="font-bold text-sky-800">🕐 ${escapar(c.hora || '')} · ${escapar(c.animal || 'Sin nombre')}</div>
+        ${c.tutor ? `<div class="text-slate-600"><span class="text-slate-400">Tutor:</span> ${escapar(c.tutor)}</div>` : ''}
+        ${especieRaza ? `<div class="text-slate-600"><span class="text-slate-400">Especie:</span> ${escapar(especieRaza)}</div>` : ''}
+        ${peso ? `<div class="text-slate-600"><span class="text-slate-400">Peso:</span> ${peso} kg</div>` : ''}
+        ${c.archivos && c.archivos.length ? `<div class="text-slate-400">📎 ${c.archivos.length} archivo(s)</div>` : ''}`;
       div.onclick = () => abrirModalEdicion(c);
       return div;
     }
