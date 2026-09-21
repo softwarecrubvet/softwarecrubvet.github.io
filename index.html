@@ -367,6 +367,7 @@
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="btnEliminar" class="hidden mr-auto px-4 py-2 rounded-lg text-sm bg-red-600 hover:bg-red-700 text-white font-semibold">🗑️ Eliminar</button>
           <button type="button" id="btnCancelar" class="px-4 py-2 rounded-lg text-sm bg-slate-200 hover:bg-slate-300">Cancelar</button>
           <button type="submit" id="btnGuardar"
             class="px-4 py-2 rounded-lg text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
@@ -437,6 +438,7 @@
         b.onclick = () => onComentar(b.getAttribute('data-tipo'));
       });
       document.getElementById('btnSubirFichaAnest').onclick = onSubirFichaAnestesica;
+      document.getElementById('btnEliminar').onclick = onEliminar;
 
       // Al escribir el procedimiento, si es un DOCTOR, el "Médico tratante"
       // se rellena automáticamente con su nombre.
@@ -831,6 +833,8 @@
       const puedeFichaAnest = P.fichaAnestesica || P.archivos;
       document.getElementById('seccionFichaAnestesica').style.display = (esEdicion && puedeFichaAnest) ? 'block' : 'none';
       document.getElementById('archivo_ficha_anestesica').disabled = !puedeFichaAnest;
+      // Botón Eliminar: solo en edición y con permiso
+      document.getElementById('btnEliminar').style.display = (esEdicion && P.eliminar) ? 'inline-block' : 'none';
     }
 
     function limpiarInputsArchivos() {
@@ -956,6 +960,28 @@
           <div class="text-xs text-slate-400 mt-0.5">${escapar(c.autor || '')} · ${escapar(c.fecha || '')}</div>`;
         ul.appendChild(li);
       });
+    }
+
+    /** Elimina la cirugía (solo rol con permiso). Pide confirmación. */
+    async function onEliminar() {
+      const id = document.getElementById('cirugiaId').value;
+      if (!id) return;
+      const animal = document.getElementById('animal').value || 'esta cirugía';
+      if (!confirm('¿Eliminar definitivamente la cirugía de "' + animal + '"? Esta acción no se puede deshacer.')) return;
+
+      const btn = document.getElementById('btnEliminar');
+      btn.disabled = true; btn.textContent = 'Eliminando…';
+      try {
+        await apiCall('eliminarCirugia', {
+          datos: { usuario: CRED.usuario, clave: CRED.clave, id: id }
+        });
+        cerrarModal();
+        cargarCirugias();
+      } catch (e) {
+        onError(e);
+      } finally {
+        btn.disabled = false; btn.textContent = '🗑️ Eliminar';
+      }
     }
 
     /** Sube la ficha anestésica (agrega archivo sin sobrescribir el resto). */
