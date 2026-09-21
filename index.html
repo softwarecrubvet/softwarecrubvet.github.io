@@ -324,10 +324,10 @@
         <!-- Ficha anestésica: subida independiente (anestesista y editores) -->
         <div id="seccionFichaAnestesica" class="hidden">
           <h4 class="text-sm font-bold text-slate-700 border-b pb-1">🧷 Ficha anestésica</h4>
-          <div class="flex gap-2 mt-1">
-            <input id="archivo_ficha_anestesica" type="file" multiple class="flex-1 text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
+          <div class="flex flex-col sm:flex-row gap-2 mt-1">
+            <input id="archivo_ficha_anestesica" type="file" multiple class="min-w-0 flex-1 text-xs border rounded-lg px-2 py-1.5 bg-slate-50">
             <button type="button" id="btnSubirFichaAnest"
-              class="px-3 py-2 rounded-lg text-sm bg-sky-600 hover:bg-sky-700 text-white font-semibold whitespace-nowrap">Subir</button>
+              class="w-full sm:w-auto px-3 py-2 rounded-lg text-sm bg-sky-600 hover:bg-sky-700 text-white font-semibold whitespace-nowrap">Subir</button>
           </div>
         </div>
 
@@ -602,13 +602,24 @@
       return `${y}-${m}-${dd}`;
     }
 
-    /** Devuelve una fecha en formato "YYYY-MM-DD" venga como venga del servidor. */
+    /**
+     * Devuelve una fecha "YYYY-MM-DD" venga como venga del servidor,
+     * SIN conversión de zona horaria (para no correr el día).
+     */
     function normFecha(f) {
       if (!f) return '';
-      if (/^\d{4}-\d{2}-\d{2}$/.test(f)) return f;           // ya está bien
-      const d = new Date(f);
-      if (!isNaN(d.getTime())) return fechaISO(d);           // Date, ISO o texto largo
-      return String(f).slice(0, 10);
+      const s = String(f);
+      // "2026-09-23" o "2026-09-23T00:00:00.000Z" -> tomamos la fecha literal
+      let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return m[1] + '-' + m[2] + '-' + m[3];
+      // Formato largo tipo "Wed Sep 23 2026 00:00:00 GMT-0400" -> fecha literal
+      const MESES = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
+      m = s.match(/\b([A-Z][a-z]{2}) (\d{1,2}) (\d{4})\b/);
+      if (m && MESES[m[1]]) return m[3] + '-' + MESES[m[1]] + '-' + String(m[2]).padStart(2, '0');
+      // Último recurso
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return fechaISO(d);
+      return s.slice(0, 10);
     }
 
     /** Devuelve una hora en formato "HH:mm" venga como venga del servidor. */
